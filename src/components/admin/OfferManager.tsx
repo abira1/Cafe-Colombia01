@@ -1,181 +1,292 @@
 import React, { useState } from 'react';
-import { Plus, Pencil, Trash2, Check, X, Image as ImageIcon } from 'lucide-react';
+import { Pencil, Trash2, Tag, X } from 'lucide-react';
+import { useData } from '../../context/DataContext';
 import { v4 as uuidv4 } from 'uuid';
+
 interface Offer {
   id: string;
   title: string;
   description: string;
-  discount: number;
+  iconUrl?: string;
+  availability: string;
   validUntil: string;
-  image: string;
   active: boolean;
 }
+
 export function OfferManager() {
-  const [offers, setOffers] = useState<Offer[]>([]);
-  const [newOffer, setNewOffer] = useState({
+  const { offers, updateOffers } = useData();
+  const [showForm, setShowForm] = useState(false);
+  const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
+  const [offerData, setOfferData] = useState<Offer>({
+    id: '',
     title: '',
     description: '',
-    discount: '',
-    validUntil: '',
-    image: '',
+    iconUrl: '',
+    availability: '',
+    validUntil: new Date().toISOString().split('T')[0],
     active: true
   });
-  const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
 
-  // Handle Image Upload
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>, isEditing = false) => {
-    const file = event.target.files?.[0];
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (editingOffer) {
+      // Update existing offer
+      const updatedOffers = offers.map(offer =>
+        offer.id === editingOffer.id ? offerData : offer
+      );
+      updateOffers(updatedOffers);
+    } else {
+      // Add new offer
+      const newOffer = {
+        ...offerData,
+        id: uuidv4()
+      };
+      updateOffers([...offers, newOffer]);
+    }
+    
+    setShowForm(false);
+    setEditingOffer(null);
+    setOfferData({
+      id: '',
+      title: '',
+      description: '',
+      iconUrl: '',
+      availability: '',
+      validUntil: new Date().toISOString().split('T')[0],
+      active: true
+    });
+  };
+
+  const handleDelete = (offerId: string) => {
+    if (window.confirm('Are you sure you want to delete this offer?')) {
+      const updatedOffers = offers.filter(offer => offer.id !== offerId);
+      updateOffers(updatedOffers);
+    }
+  };
+
+  const handleEdit = (offer: Offer) => {
+    setEditingOffer(offer);
+    setOfferData(offer);
+    setShowForm(true);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = () => {
-        if (isEditing && editingOffer) {
-          setEditingOffer({
-            ...editingOffer,
-            image: reader.result as string
-          });
-        } else {
-          setNewOffer({
-            ...newOffer,
-            image: reader.result as string
-          });
-        }
+      reader.onloadend = () => {
+        setOfferData({ ...offerData, iconUrl: reader.result as string });
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // Add Offer
-  const addOffer = () => {
-    if (!newOffer.title || !newOffer.description || !newOffer.discount || !newOffer.validUntil || !newOffer.image) return;
-    setOffers([...offers, {
-      id: uuidv4(),
-      ...newOffer,
-      discount: Number(newOffer.discount)
-    }]);
-    setNewOffer({
-      title: '',
-      description: '',
-      discount: '',
-      validUntil: '',
-      image: '',
-      active: true
-    });
-  };
-
-  // Delete Offer
-  const deleteOffer = (id: string) => {
-    setOffers(offers.filter(offer => offer.id !== id));
-  };
-
-  // Toggle Offer Status
-  const toggleOfferStatus = (id: string) => {
-    setOffers(offers.map(offer => offer.id === id ? {
-      ...offer,
-      active: !offer.active
-    } : offer));
-  };
-
-  // Start Editing
-  const startEditing = (offer: Offer) => {
-    setEditingOffer(offer);
-  };
-
-  // Save Edited Offer
-  const saveEditedOffer = () => {
-    if (!editingOffer) return;
-    setOffers(offers.map(offer => offer.id === editingOffer.id ? editingOffer : offer));
-    setEditingOffer(null);
-  };
-  return <div className="space-y-6">
-      <h2 className="text-2xl font-semibold mb-6">Offer Management</h2>
-
-      {/* Offer Form */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">Add New Offer</h3>
-        <div className="grid grid-cols-4 gap-4">
-          <input type="text" placeholder="Title" className="border rounded px-3 py-2" value={newOffer.title} onChange={e => setNewOffer({
-          ...newOffer,
-          title: e.target.value
-        })} />
-          <input type="text" placeholder="Description" className="border rounded px-3 py-2" value={newOffer.description} onChange={e => setNewOffer({
-          ...newOffer,
-          description: e.target.value
-        })} />
-          <input type="number" placeholder="Discount %" className="border rounded px-3 py-2" value={newOffer.discount} onChange={e => setNewOffer({
-          ...newOffer,
-          discount: e.target.value
-        })} />
-          <input type="date" className="border rounded px-3 py-2" value={newOffer.validUntil} onChange={e => setNewOffer({
-          ...newOffer,
-          validUntil: e.target.value
-        })} />
-          <label className="border rounded px-3 py-2 flex items-center cursor-pointer">
-            <ImageIcon className="w-5 h-5 mr-2" /> Upload Image
-            <input type="file" className="hidden" accept="image/*" onChange={e => handleImageUpload(e)} />
-          </label>
-          {newOffer.image && <img src={newOffer.image} alt="Offer" className="h-16 w-16 rounded border" />}
-          <button onClick={addOffer} className="bg-green-600 text-white px-4 py-2 rounded flex items-center">
-            <Plus className="w-4 h-4 mr-2" /> Add Offer
-          </button>
-        </div>
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-semibold">Offer Management</h2>
+        <button
+          onClick={() => {
+            setEditingOffer(null);
+            setOfferData({
+              id: '',
+              title: '',
+              description: '',
+              iconUrl: '',
+              availability: '',
+              validUntil: new Date().toISOString().split('T')[0],
+              active: true
+            });
+            setShowForm(true);
+          }}
+          className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700"
+        >
+          Add New Offer
+        </button>
       </div>
 
-      {/* Offer List */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">Existing Offers</h3>
-        {offers.length === 0 ? <p className="text-gray-600">No offers available.</p> : <ul className="divide-y">
-            {offers.map(offer => <li key={offer.id} className="flex justify-between items-center py-3">
-                <div>
-                  <h4 className="font-semibold">{offer.title}</h4>
-                  <p className="text-sm text-gray-600">{offer.description}</p>
-                  <p className="text-sm">Discount: {offer.discount}% | Valid Until: {offer.validUntil}</p>
-                  {offer.image && <img src={offer.image} alt={offer.title} className="h-16 w-16 rounded border mt-2" />}
-                  <span className={`px-2 py-1 text-sm rounded ${offer.active ? 'bg-green-200 text-green-800' : 'bg-gray-300 text-gray-800'}`}>
-                    {offer.active ? 'Active' : 'Inactive'}
-                  </span>
+      {showForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">
+                {editingOffer ? 'Edit Offer' : 'Add New Offer'}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowForm(false);
+                  setEditingOffer(null);
+                  setOfferData({
+                    id: '',
+                    title: '',
+                    description: '',
+                    iconUrl: '',
+                    availability: '',
+                    validUntil: new Date().toISOString().split('T')[0],
+                    active: true
+                  });
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSave} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Title</label>
+                <input
+                  type="text"
+                  value={offerData.title}
+                  onChange={(e) => setOfferData({ ...offerData, title: e.target.value })}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Description</label>
+                <textarea
+                  value={offerData.description}
+                  onChange={(e) => setOfferData({ ...offerData, description: e.target.value })}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                  rows={3}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Icon</label>
+                <div className="mt-1 flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100"
+                  />
                 </div>
-                <div className="flex items-center space-x-3">
-                  <button onClick={() => toggleOfferStatus(offer.id)} className="text-green-600">
-                    {offer.active ? <X className="w-5 h-5" /> : <Check className="w-5 h-5" />}
-                  </button>
-                  <button onClick={() => startEditing(offer)} className="text-blue-600">
-                    <Pencil className="w-5 h-5" />
-                  </button>
-                  <button onClick={() => deleteOffer(offer.id)} className="text-red-600">
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                </div>
-              </li>)}
-          </ul>}
-      </div>
-
-      {/* Edit Offer Modal */}
-      {editingOffer && <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h3 className="text-lg font-semibold mb-4">Edit Offer</h3>
-            <input type="text" placeholder="Title" className="border rounded w-full px-3 py-2 mb-3" value={editingOffer.title} onChange={e => setEditingOffer({
-          ...editingOffer,
-          title: e.target.value
-        })} />
-            <input type="text" placeholder="Description" className="border rounded w-full px-3 py-2 mb-3" value={editingOffer.description} onChange={e => setEditingOffer({
-          ...editingOffer,
-          description: e.target.value
-        })} />
-            <input type="number" placeholder="Discount %" className="border rounded w-full px-3 py-2 mb-3" value={editingOffer.discount} onChange={e => setEditingOffer({
-          ...editingOffer,
-          discount: Number(e.target.value)
-        })} />
-            <input type="date" className="border rounded w-full px-3 py-2 mb-3" value={editingOffer.validUntil} onChange={e => setEditingOffer({
-          ...editingOffer,
-          validUntil: e.target.value
-        })} />
-            <label className="border rounded px-3 py-2 flex items-center cursor-pointer mb-3">
-              <ImageIcon className="w-5 h-5 mr-2" /> Upload Image
-              <input type="file" className="hidden" accept="image/*" onChange={e => handleImageUpload(e, true)} />
-            </label>
-            {editingOffer.image && <img src={editingOffer.image} alt="Offer" className="h-16 w-16 rounded border" />}
-            <button onClick={saveEditedOffer} className="bg-blue-600 text-white px-4 py-2 rounded w-full mt-3">Save</button>
+                {offerData.iconUrl && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <img src={offerData.iconUrl} alt="Preview" className="w-10 h-10 object-contain" />
+                    <button
+                      type="button"
+                      onClick={() => setOfferData({ ...offerData, iconUrl: '' })}
+                      className="text-red-600 text-sm hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Valid Until</label>
+                <input
+                  type="date"
+                  value={offerData.validUntil}
+                  min={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => setOfferData({ ...offerData, validUntil: e.target.value })}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Availability</label>
+                <input
+                  type="text"
+                  value={offerData.availability}
+                  onChange={(e) => setOfferData({ ...offerData, availability: e.target.value })}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                  placeholder="e.g., '8 PM - 1 AM' or 'Weekdays'"
+                  required
+                />
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={offerData.active}
+                  onChange={(e) => setOfferData({ ...offerData, active: e.target.checked })}
+                  className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
+                />
+                <label className="ml-2 block text-sm text-gray-700">Active</label>
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForm(false);
+                    setEditingOffer(null);
+                    setOfferData({
+                      id: '',
+                      title: '',
+                      description: '',
+                      iconUrl: '',
+                      availability: '',
+                      validUntil: new Date().toISOString().split('T')[0],
+                      active: true
+                    });
+                  }}
+                  className="px-4 py-2 text-gray-700 hover:text-gray-900"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
+                >
+                  Save
+                </button>
+              </div>
+            </form>
           </div>
-        </div>}
-    </div>;
+        </div>
+      )}
+
+      <div className="bg-white rounded-lg shadow">
+        {offers.length === 0 ? (
+          <div className="p-4 text-center text-gray-500">No offers found.</div>
+        ) : (
+          offers.map(offer => (
+            <div key={offer.id} className="border-b last:border-b-0 p-4 hover:bg-gray-50">
+              <div className="flex justify-between items-start">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{offer.title}</span>
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      offer.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {offer.active ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    <p>{offer.description}</p>
+                    <p>Availability: {offer.availability}</p>
+                    <p>Valid Until: {new Date(offer.validUntil).toLocaleDateString()}</p>
+                    {offer.iconUrl && (
+                      <div className="mt-2">
+                        <img src={offer.iconUrl} alt={offer.title} className="w-10 h-10 object-contain" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleEdit(offer)}
+                    className="p-1 hover:bg-gray-100 rounded"
+                    title="Edit"
+                  >
+                    <Pencil className="w-5 h-5 text-gray-600" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(offer.id)}
+                    className="p-1 hover:bg-red-100 rounded"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-5 h-5 text-red-600" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
 }

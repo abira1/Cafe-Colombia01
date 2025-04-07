@@ -1,17 +1,22 @@
 import React from 'react';
 import { Coffee, Award, Users } from 'lucide-react';
+
 export function AboutSection() {
-  return <section id="about" className="relative py-20 bg-amber-50">
+  return (
+    <section id="about" className="relative py-20 bg-amber-50">
       {/* Background Logo Aligned Further to the Right */}
-      <div className="absolute inset-0 opacity-30" style={{
-      backgroundImage: `url("https://i.postimg.cc/3rcdqGTx/Whats-App-Image-2025-03-11-at-22-10-43-5b11aa91-removebg-preview.png")`,
-      backgroundRepeat: 'no-repeat',
-      backgroundSize: '50%',
-      // Keeps the size as requested
-      backgroundPosition: '95% center',
-      // Adjusted for better alignment
-      filter: 'blur(3px)' // Subtle blur effect
-    }}></div>
+      <div 
+        className="absolute inset-0 opacity-30" 
+        style={{
+          backgroundImage: `url("https://i.postimg.cc/3rcdqGTx/Whats-App-Image-2025-03-11-at-22-10-43-5b11aa91-removebg-preview.png")`,
+          backgroundRepeat: 'no-repeat',
+          backgroundSize: '50%',
+          // Keeps the size as requested
+          backgroundPosition: '95% center',
+          // Adjusted for better alignment
+          filter: 'blur(3px)' // Subtle blur effect
+        }}
+      />
 
       <div className="relative container mx-auto px-4">
         <div className="text-center mb-16">
@@ -22,7 +27,11 @@ export function AboutSection() {
         <div className="flex flex-col md:flex-row gap-8 items-center">
           {/* Left Side Image */}
           <div className="md:w-1/2">
-            <img src="https://i.postimg.cc/L5V6Cd9w/2024-12-20-1.jpg" alt="Coffee plantation in Colombia" className="rounded-lg shadow-xl" />
+            <img 
+              src="https://i.postimg.cc/L5V6Cd9w/2024-12-20-1.jpg" 
+              alt="Coffee plantation in Colombia" 
+              className="rounded-lg shadow-xl" 
+            />
           </div>
 
           {/* Right Side Content */}
@@ -68,5 +77,6 @@ export function AboutSection() {
           </div>
         </div>
       </div>
-    </section>;
+    </section>
+  );
 }

@@ -1,38 +1,70 @@
 import React from 'react';
+import { useData } from '../context/DataContext';
+import { Image as ImageIcon } from 'lucide-react';
+
 export function GallerySection() {
-  const images = [{
-    url: 'https://i.postimg.cc/L5V6Cd9w/2024-12-20-1.jpg',
-    alt: 'Coffee beans being roasted'
-  }, {
-    url: 'https://i.postimg.cc/G2wLb396/unnamed-3.jpg',
-    alt: 'Café interior with customers enjoying coffee'
-  }, {
-    url: 'https://i.postimg.cc/q7CBf6B8/unnamed-2.jpg',
-    alt: 'Barista preparing coffee'
-  }, {
-    url: 'https://i.postimg.cc/XqWYkNb9/2024-11-23.jpg',
-    alt: 'Colombian coffee farm'
-  }, {
-    url: 'https://i.postimg.cc/SsCK92wy/2024-06-22.jpg',
-    alt: 'Latte art'
-  }, {
-    url: 'https://i.postimg.cc/Bvd6tc7Y/2024-02-11.jpg',
-    alt: 'Coffee and pastries'
-  }];
-  return <section id="gallery" className="py-20 bg-white">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Gallery</h2>
-          <div className="w-24 h-1 bg-yellow-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">
-            Experience the warmth and flavor of Café Colombia
-          </p>
+  const { gallery, isLoading, error } = useData();
+
+  if (isLoading) {
+    return (
+      <section id="gallery" className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center text-gray-600">Loading gallery...</div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {images.map((image, index) => <div key={index} className="overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
-              <img src={image.url} alt={image.alt} className="w-full h-64 object-cover hover:scale-105 transition-transform duration-500" />
-            </div>)}
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section id="gallery" className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center text-red-600">Error loading gallery: {error}</div>
+        </div>
+      </section>
+    );
+  }
+
+  if (gallery.length === 0) {
+    return (
+      <div className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center text-gray-600">No images in the gallery.</div>
         </div>
       </div>
-    </section>;
+    );
+  }
+
+  return (
+    <section id="gallery" className="py-20 bg-gray-50">
+      <div className="container mx-auto px-4">
+        <h2 className="text-3xl font-bold text-center mb-12">Our Gallery</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {gallery.map(item => (
+            <div key={item.id} className="bg-white rounded-lg shadow-lg overflow-hidden group">
+              <div className="relative">
+                {item.image ? (
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="w-full h-64 bg-gray-100 flex items-center justify-center">
+                    <ImageIcon className="w-12 h-12 text-gray-400" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity duration-300 flex items-center justify-center">
+                  <div className="text-white text-center p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
+                    <p className="text-sm">{item.description}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 }
